@@ -38,7 +38,7 @@ that works and is honestly described beats something large that is oversold.
 
 | Deliverable | Notes |
 |---|---|
-| **The link to your repo** | With everything committed. Tell us in the README what runs and what does not |
+| **The link to your repo** | With everything committed. Replace this README with your own: what runs, what does not, and how to start it |
 | **`DECISIONS.md`** (one page) | What you chose, what you cut and why, and what would break first if this had 50 editors |
 | **Your AI trail** | Whatever your tooling left behind, committed or attached: how you set it up, what you told it, what it produced. Plus a short note: how you approached the task before any code was written, where the tool carried the work, where you overrode it, and what you checked by hand |
 

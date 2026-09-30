@@ -64,4 +64,3 @@ The owning team knows about these habits and has no plans to change them:
   you send. Send a list with one entry and the others are gone.
 - **Responses are wide.** Each project carries about 15 more fields than an edit screen needs.
 - **It is sometimes slow.** About one `GET /projects/{id}` in ten takes around 2 seconds.
-- **`GET /projects` is not paginated.** You get everything.
