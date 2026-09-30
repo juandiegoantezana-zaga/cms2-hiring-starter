@@ -20,10 +20,14 @@ interested in how you prepared your tooling for the job as in what you asked it 
 |---|---|
 | **A backend (Python, FastAPI)** | Sits between the browser and the upstream API. Lists projects, returns one project, saves edits to one project |
 | **A frontend (React + MUI)** | A project list, and an edit form for the project's core fields and its key dates |
-| **Safe concurrent editing** | If two people edit the same project at the same time, neither may silently overwrite the other. The upstream gives you no help with this. Choose a strategy and defend it |
+| **Safe concurrent editing** | Two people can edit the same project at the same time. If they change different fields, both changes must survive. If they change the same field, neither may silently win: the person saving second decides. The upstream gives you no help with this. Decide what "the same field" means for the key dates, and say why |
 
 One hard rule: **the browser never calls the upstream API directly.** Everything goes through your
 backend.
+
+**Where this will run.** In production your backend runs as three instances behind a load balancer,
+and a nightly import job writes to the upstream directly, without going through your backend. You do
+not need to build either. Your design does need to survive both.
 
 The upstream has some awkward habits. They are in its README. Dealing with them is part of the task.
 Do not modify anything in `upstream/`.
