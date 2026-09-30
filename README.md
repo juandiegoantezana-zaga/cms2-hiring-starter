@@ -11,7 +11,7 @@ it. Your job is the layer in front of it.
 2. Run the upstream API locally. Instructions, and its known habits, are in
    [`upstream/README.md`](upstream/README.md). It comes seeded with about 30 fictional projects.
 
-## What to build (one to two hours)
+## What to build (about an hour, likely less with good tooling)
 
 Use AI the way you would on a real task here, not the way you would for a quick question. We are as
 interested in how you prepared your tooling for the job as in what you asked it to do.
@@ -28,6 +28,8 @@ backend.
 **Where this will run.** In production your backend runs as three instances behind a load balancer,
 and a nightly import job writes to the upstream directly, without going through your backend. You do
 not need to build either. Your design does need to survive both.
+
+**You will extend this code live in the interview.** Leave it in the state you would want to work in.
 
 The upstream has some awkward habits. They are in its README. Dealing with them is part of the task.
 Do not modify anything in `upstream/`.
