@@ -16,6 +16,7 @@ from records_api.seed import COMPANY_ROLES, SECTORS, STAGES, build_projects
 API_KEY = "local-dev-key"
 SLOW_SECONDS = 2.0
 DEFAULT_SLOW_RATE = 0.1
+DEFAULT_TIMEOUT_RATE = 0.1
 
 Sector = Literal[tuple(SECTORS)]  # type: ignore[valid-type]
 Stage = Literal[tuple(STAGES)]  # type: ignore[valid-type]
@@ -48,9 +49,11 @@ def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
         raise HTTPException(status_code=401, detail="Missing or invalid X-Api-Key")
 
 
-def create_app() -> FastAPI:
+def create_app(rng: random.Random | None = None) -> FastAPI:
+    rng = rng or random.Random()
     store = build_projects()
     slow_rate = float(os.environ.get("UPSTREAM_SLOW_RATE", DEFAULT_SLOW_RATE))
+    timeout_rate = float(os.environ.get("UPSTREAM_TIMEOUT_RATE", DEFAULT_TIMEOUT_RATE))
     app = FastAPI(title="Records API (upstream)", version="1.0.0", dependencies=[Depends(require_api_key)])
 
     def find(project_id: str) -> dict:
@@ -64,13 +67,18 @@ def create_app() -> FastAPI:
 
     @app.get("/projects/{project_id}")
     async def get_project(project_id: str) -> dict:
-        if random.random() < slow_rate:
+        if slow_rate > 0 and rng.random() < slow_rate:
             await asyncio.sleep(SLOW_SECONDS)
         return copy.deepcopy(find(project_id))
 
     @app.put("/projects/{project_id}")
     def replace_project(project_id: str, update: ProjectUpdate) -> dict:
         project = find(project_id)
+        if timeout_rate > 0 and rng.random() < timeout_rate:
+            # Like a gateway timing out: the caller cannot tell whether the write landed.
+            if rng.random() < 0.5:
+                project.update(update.model_dump(mode="json"))
+            raise HTTPException(status_code=504, detail="Gateway timeout")
         project.update(update.model_dump(mode="json"))
         return copy.deepcopy(project)
 

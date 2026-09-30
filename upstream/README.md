@@ -19,6 +19,7 @@ It listens on `http://127.0.0.1:8081`. Interactive docs are at `/docs`, and the 
 |---|---|---|
 | `UPSTREAM_PORT` | `8081` | Port to listen on |
 | `UPSTREAM_SLOW_RATE` | `0.1` | Share of `GET /projects/{id}` calls that take about 2 seconds. Set it to `0` to switch this off |
+| `UPSTREAM_TIMEOUT_RATE` | `0.1` | Share of `PUT` calls that answer `504 Gateway timeout`. Set it to `0` to switch this off |
 
 Its own tests: `uv run pytest`.
 
@@ -33,7 +34,7 @@ API has no idea who the person behind a request is.
 |---|---|---|
 | `GET` | `/projects` | Every project, in full |
 | `GET` | `/projects/{id}` | One project, in full. `404` if unknown |
-| `PUT` | `/projects/{id}` | Saves the editable fields of one project and returns the stored record. `404` if unknown, `422` if invalid |
+| `PUT` | `/projects/{id}` | Saves the editable fields of one project and returns the stored record. `404` if unknown, `422` if invalid, sometimes `504` (see below) |
 
 ## Data
 
@@ -64,3 +65,5 @@ The owning team knows about these habits and has no plans to change them:
   you send. Send a list with one entry and the others are gone.
 - **Responses are wide.** Each project carries about 15 more fields than an edit screen needs.
 - **It is sometimes slow.** About one `GET /projects/{id}` in ten takes around 2 seconds.
+- **Saves sometimes time out.** About one `PUT` in ten answers `504 Gateway timeout`. A `504` does
+  not tell you whether the save happened: sometimes it did, sometimes it did not.

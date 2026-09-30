@@ -1,3 +1,5 @@
+import random
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -10,6 +12,7 @@ EDITABLE = {"name", "sector", "country", "stage", "key_dates", "linked_companies
 @pytest.fixture
 def client(monkeypatch):
     monkeypatch.setenv("UPSTREAM_SLOW_RATE", "0")
+    monkeypatch.setenv("UPSTREAM_TIMEOUT_RATE", "0")
     return TestClient(create_app())
 
 
@@ -96,3 +99,43 @@ def test_put_unknown_id_is_404(client):
     project = client.get("/projects", headers=HEADERS).json()[0]
     response = client.put("/projects/P-0000", json=editable_body(project), headers=HEADERS)
     assert response.status_code == 404
+
+
+class FixedRandom(random.Random):
+    """random() returns the given values in turn, so each flaky path can be forced."""
+
+    def __init__(self, *values: float):
+        super().__init__()
+        self.values = list(values)
+
+    def random(self) -> float:
+        return self.values.pop(0)
+
+
+def flaky_client(monkeypatch, *values: float) -> TestClient:
+    monkeypatch.setenv("UPSTREAM_SLOW_RATE", "0")
+    monkeypatch.setenv("UPSTREAM_TIMEOUT_RATE", "0.1")
+    return TestClient(create_app(rng=FixedRandom(*values)))
+
+
+def test_timed_out_put_can_still_apply(monkeypatch):
+    client = flaky_client(monkeypatch, 0.0, 0.0)  # time out, and apply
+    project = client.get("/projects/P-1001", headers=HEADERS).json()
+    body = editable_body(project) | {"name": "Applied anyway"}
+    assert client.put(f"/projects/{project['id']}", json=body, headers=HEADERS).status_code == 504
+    assert client.get(f"/projects/{project['id']}", headers=HEADERS).json()["name"] == "Applied anyway"
+
+
+def test_timed_out_put_can_be_lost(monkeypatch):
+    client = flaky_client(monkeypatch, 0.0, 0.9)  # time out, and do not apply
+    project = client.get("/projects/P-1001", headers=HEADERS).json()
+    body = editable_body(project) | {"name": "Never stored"}
+    assert client.put(f"/projects/{project['id']}", json=body, headers=HEADERS).status_code == 504
+    assert client.get(f"/projects/{project['id']}", headers=HEADERS).json()["name"] == project["name"]
+
+
+def test_put_succeeds_when_no_timeout_is_drawn(monkeypatch):
+    client = flaky_client(monkeypatch, 0.5)
+    project = client.get("/projects/P-1001", headers=HEADERS).json()
+    body = editable_body(project) | {"name": "Fine"}
+    assert client.put(f"/projects/{project['id']}", json=body, headers=HEADERS).status_code == 200
